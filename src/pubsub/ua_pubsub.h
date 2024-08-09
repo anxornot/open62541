@@ -200,10 +200,13 @@ typedef struct UA_StandaloneSubscribedDataSet {
 UA_StatusCode
 UA_StandaloneSubscribedDataSetConfig_copy(const UA_StandaloneSubscribedDataSetConfig *src,
                                           UA_StandaloneSubscribedDataSetConfig *dst);
+
 UA_StandaloneSubscribedDataSet *
 UA_StandaloneSubscribedDataSet_findSDSbyId(UA_Server *server, UA_NodeId identifier);
+
 UA_StandaloneSubscribedDataSet *
 UA_StandaloneSubscribedDataSet_findSDSbyName(UA_Server *server, UA_String identifier);
+
 void
 UA_StandaloneSubscribedDataSet_clear(UA_Server *server,
                                      UA_StandaloneSubscribedDataSet *subscribedDataSet);
@@ -275,7 +278,6 @@ void
 UA_PubSubConnection_process(UA_Server *server, UA_PubSubConnection *c,
                             UA_ByteString msg);
 
-
 void
 UA_PubSubConnection_disconnect(UA_PubSubConnection *c);
 
@@ -285,8 +287,7 @@ UA_EventLoop *
 UA_PubSubConnection_getEL(UA_Server *server, UA_PubSubConnection *c);
 
 UA_StatusCode
-UA_PubSubConnection_setPubSubState(UA_Server *server,
-                                   UA_PubSubConnection *connection,
+UA_PubSubConnection_setPubSubState(UA_Server *server, UA_PubSubConnection *c,
                                    UA_PubSubState targetState);
 
 /**********************************************/
@@ -325,14 +326,13 @@ UA_DataSetWriter *
 UA_DataSetWriter_findDSWbyId(UA_Server *server, UA_NodeId identifier);
 
 UA_StatusCode
-UA_DataSetWriter_setPubSubState(UA_Server *server,
-                                UA_DataSetWriter *dataSetWriter,
+UA_DataSetWriter_setPubSubState(UA_Server *server, UA_DataSetWriter *dsw,
                                 UA_PubSubState targetState);
 
 UA_StatusCode
 UA_DataSetWriter_generateDataSetMessage(UA_Server *server,
-                                        UA_DataSetMessage *dataSetMessage,
-                                        UA_DataSetWriter *dataSetWriter);
+                                        UA_DataSetMessage *dsm,
+                                        UA_DataSetWriter *dsw);
 
 UA_StatusCode
 UA_DataSetWriter_prepareDataSet(UA_Server *server, UA_DataSetWriter *dsw,
@@ -352,7 +352,7 @@ UA_DataSetWriter_create(UA_Server *server,
 
 
 UA_StatusCode
-UA_DataSetWriter_remove(UA_Server *server, UA_DataSetWriter *dataSetWriter);
+UA_DataSetWriter_remove(UA_Server *server, UA_DataSetWriter *dsw);
 
 /**********************************************/
 /*               WriterGroup                  */
@@ -426,15 +426,14 @@ UA_StatusCode
 UA_WriterGroup_unfreezeConfiguration(UA_Server *server, UA_WriterGroup *wg);
 
 UA_StatusCode
-UA_WriterGroup_setPubSubState(UA_Server *server,
-                              UA_WriterGroup *writerGroup,
+UA_WriterGroup_setPubSubState(UA_Server *server, UA_WriterGroup *wg,
                               UA_PubSubState targetState);
 UA_StatusCode
-UA_WriterGroup_addPublishCallback(UA_Server *server, UA_WriterGroup *writerGroup);
+UA_WriterGroup_addPublishCallback(UA_Server *server, UA_WriterGroup *wg);
 
 void
 UA_WriterGroup_publishCallback(UA_Server *server,
-                               UA_WriterGroup *writerGroup);
+                               UA_WriterGroup *wg);
 
 UA_StatusCode
 UA_WriterGroup_updateConfig(UA_Server *server, UA_WriterGroup *wg,
@@ -549,25 +548,6 @@ UA_StatusCode
 UA_DataSetReader_setPubSubState(UA_Server *server, UA_DataSetReader *dsr,
                                 UA_PubSubState targetState);
 
-#define UA_LOG_READER_INTERNAL(LOGGER, LEVEL, READER, MSG, ...)         \
-    if(UA_LOGLEVEL <= UA_LOGLEVEL_##LEVEL) {                            \
-        UA_LOG_##LEVEL(LOGGER, UA_LOGCATEGORY_PUBSUB, "%S" MSG "%.0s",  \
-                       (READER)->head.logIdString, __VA_ARGS__);        \
-    }
-
-#define UA_LOG_TRACE_READER(LOGGER, READER, ...)                        \
-    UA_MACRO_EXPAND(UA_LOG_READER_INTERNAL(LOGGER, TRACE, READER, __VA_ARGS__, ""))
-#define UA_LOG_DEBUG_READER(LOGGER, READER, ...)                        \
-    UA_MACRO_EXPAND(UA_LOG_READER_INTERNAL(LOGGER, DEBUG, READER, __VA_ARGS__, ""))
-#define UA_LOG_INFO_READER(LOGGER, READER, ...)                         \
-    UA_MACRO_EXPAND(UA_LOG_READER_INTERNAL(LOGGER, INFO, READER, __VA_ARGS__, ""))
-#define UA_LOG_WARNING_READER(LOGGER, READER, ...)                      \
-    UA_MACRO_EXPAND(UA_LOG_READER_INTERNAL(LOGGER, WARNING, READER, __VA_ARGS__, ""))
-#define UA_LOG_ERROR_READER(LOGGER, READER, ...)                        \
-    UA_MACRO_EXPAND(UA_LOG_READER_INTERNAL(LOGGER, ERROR, READER, __VA_ARGS__, ""))
-#define UA_LOG_FATAL_READER(LOGGER, READER, ...)                        \
-    UA_MACRO_EXPAND(UA_LOG_READER_INTERNAL(LOGGER, FATAL, READER, __VA_ARGS__, ""))
-
 /**********************************************/
 /*                ReaderGroup                 */
 /**********************************************/
@@ -650,25 +630,6 @@ UA_Boolean
 UA_ReaderGroup_process(UA_Server *server, UA_ReaderGroup *rg,
                        UA_NetworkMessage *nm);
 
-#define UA_LOG_READERGROUP_INTERNAL(LOGGER, LEVEL, RG, MSG, ...)        \
-    if(UA_LOGLEVEL <= UA_LOGLEVEL_##LEVEL) {                            \
-        UA_LOG_##LEVEL(LOGGER, UA_LOGCATEGORY_PUBSUB, "%S" MSG "%.0s",  \
-                       (RG)->head.logIdString, __VA_ARGS__);            \
-    }
-
-#define UA_LOG_TRACE_READERGROUP(LOGGER, READERGROUP, ...)              \
-    UA_MACRO_EXPAND(UA_LOG_READERGROUP_INTERNAL(LOGGER, TRACE, READERGROUP, __VA_ARGS__, ""))
-#define UA_LOG_DEBUG_READERGROUP(LOGGER, READERGROUP, ...)              \
-    UA_MACRO_EXPAND(UA_LOG_READERGROUP_INTERNAL(LOGGER, DEBUG, READERGROUP, __VA_ARGS__, ""))
-#define UA_LOG_INFO_READERGROUP(LOGGER, READERGROUP, ...)               \
-    UA_MACRO_EXPAND(UA_LOG_READERGROUP_INTERNAL(LOGGER, INFO, READERGROUP, __VA_ARGS__, ""))
-#define UA_LOG_WARNING_READERGROUP(LOGGER, READERGROUP, ...)            \
-    UA_MACRO_EXPAND(UA_LOG_READERGROUP_INTERNAL(LOGGER, WARNING, READERGROUP, __VA_ARGS__, ""))
-#define UA_LOG_ERROR_READERGROUP(LOGGER, READERGROUP, ...)              \
-    UA_MACRO_EXPAND(UA_LOG_READERGROUP_INTERNAL(LOGGER, ERROR, READERGROUP, __VA_ARGS__, ""))
-#define UA_LOG_FATAL_READERGROUP(LOGGER, READERGROUP, ...)              \
-    UA_MACRO_EXPAND(UA_LOG_READERGROUP_INTERNAL(LOGGER, FATAL, READERGROUP, __VA_ARGS__, ""))
-
 /*********************************************************/
 /*               Reading Message handling                */
 /*********************************************************/
@@ -678,7 +639,7 @@ UA_ReaderGroup_process(UA_Server *server, UA_ReaderGroup *rg,
 UA_StatusCode
 verifyAndDecryptNetworkMessage(const UA_Logger *logger, UA_ByteString buffer,
                                Ctx *ctx, UA_NetworkMessage *nm,
-                               UA_ReaderGroup *readerGroup);
+                               UA_ReaderGroup *rg);
 
 UA_StatusCode
 UA_PubSubConnection_decodeNetworkMessage(UA_PubSubConnection *connection,
@@ -686,9 +647,11 @@ UA_PubSubConnection_decodeNetworkMessage(UA_PubSubConnection *connection,
                                          UA_NetworkMessage *nm);
 
 #ifdef UA_ENABLE_PUBSUB_SKS
+
 /*********************************************************/
 /*                    SecurityGroup                      */
 /*********************************************************/
+
 struct UA_SecurityGroup {
     UA_String securityGroupId;
     UA_SecurityGroupConfig config;
@@ -715,10 +678,10 @@ UA_SecurityGroup *
 UA_SecurityGroup_findSGbyId(UA_Server *server, UA_NodeId identifier);
 
 void
-UA_SecurityGroup_delete(UA_SecurityGroup *securityGroup);
+UA_SecurityGroup_delete(UA_SecurityGroup *sg);
 
 void
-removeSecurityGroup(UA_Server *server, UA_SecurityGroup *securityGroup);
+removeSecurityGroup(UA_Server *server, UA_SecurityGroup *sg);
 
 #endif /* UA_ENABLE_PUBSUB_SKS */
 
@@ -779,25 +742,27 @@ typedef struct UA_PubSubManager {
 } UA_PubSubManager;
 
 UA_StatusCode
-UA_PubSubManager_addPubSubTopicAssign(UA_Server *server, UA_ReaderGroup *readerGroup,
+UA_PubSubManager_addPubSubTopicAssign(UA_Server *server, UA_ReaderGroup *rg,
                                       UA_String topic);
 
 UA_StatusCode
-UA_PubSubManager_reserveIds(UA_Server *server, UA_NodeId sessionId, UA_UInt16 numRegWriterGroupIds,
-                            UA_UInt16 numRegDataSetWriterIds, UA_String transportProfileUri,
-                            UA_UInt16 **writerGroupIds, UA_UInt16 **dataSetWriterIds);
+UA_PubSubManager_reserveIds(UA_Server *server, UA_NodeId sessionId,
+                            UA_UInt16 numRegWriterGroupIds,
+                            UA_UInt16 numRegDataSetWriterIds,
+                            UA_String transportProfileUri, UA_UInt16 **writerGroupIds,
+                            UA_UInt16 **dataSetWriterIds);
 
 void
 UA_PubSubManager_freeIds(UA_Server *server);
 
 void
-UA_PubSubManager_init(UA_Server *server, UA_PubSubManager *pubSubManager);
+UA_PubSubManager_init(UA_Server *server, UA_PubSubManager *psm);
 
 void
-UA_PubSubManager_shutdown(UA_Server *server, UA_PubSubManager *pubSubManager);
+UA_PubSubManager_shutdown(UA_Server *server, UA_PubSubManager *psm);
 
 void
-UA_PubSubManager_delete(UA_Server *server, UA_PubSubManager *pubSubManager);
+UA_PubSubManager_delete(UA_Server *server, UA_PubSubManager *psm);
 
 #ifndef UA_ENABLE_PUBSUB_INFORMATIONMODEL
 void
@@ -831,7 +796,7 @@ UA_PubSubConfigurationVersionTimeDifference(UA_DateTime now);
 #ifdef UA_ENABLE_PUBSUB_MONITORING
 
 UA_StatusCode
-UA_PubSubManager_setDefaultMonitoringCallbacks(UA_PubSubMonitoringInterface *monitoringInterface);
+UA_PubSubManager_setDefaultMonitoringCallbacks(UA_PubSubMonitoringInterface *mif);
 
 #endif /* UA_ENABLE_PUBSUB_MONITORING */
 
